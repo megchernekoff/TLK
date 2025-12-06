@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ recipe['title'] }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { 
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; 
+            margin: 1rem;
+            background: #faf7f3;
+        }
+        a { text-decoration: none; color: #4b6b4b; }
+        .back-link { font-size: 0.9rem; margin-bottom: 0.75rem; display: inline-block; }
+        h1 { font-size: 1.3rem; margin-bottom: 0.25rem; }
+        .meta { font-size: 0.85rem; color: #777; margin-bottom: 1rem; }
+        .button-row { margin-top: 1rem; }
+        .btn {
+            display: inline-block;
+            padding: 0.6rem 1.1rem;
+            border-radius: 999px;
+            border: none;
+            background: #4b6b4b;
+            color: white;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+        .btn-secondary {
+            background: #ddd;
+            color: #333;
+            margin-left: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <a class="back-link" href="{{ url_for('index') }}">&larr; Back to recipes</a>
+
+    <h1>{{ recipe['title'] }}</h1>
+    <div class="meta">
+        Saved at: {{ recipe['created_at'] }}
+    </div>
+
+    <div class="button-row">
+        <a href="{{ recipe['url'] }}" target="_blank" rel="noopener">
+            <button class="btn">Open full recipe on The Lost Kitchen</button>
+        </a>
+    </div>
+</body>
+</html>

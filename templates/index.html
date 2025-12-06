@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Lost Kitchen Recipes</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { 
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; 
+            margin: 1rem; 
+            background: #faf7f3;
+        }
+        h1 { margin-bottom: 0.5rem; }
+        .subtitle { color: #666; margin-bottom: 1rem; }
+        .search-bar {
+            margin-bottom: 1rem;
+        }
+        .search-bar input[type="text"] {
+            width: 70%;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid #ccc;
+        }
+        .search-bar button {
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            border: none;
+            background: #4b6b4b;
+            color: white;
+            cursor: pointer;
+        }
+        .search-bar button:hover {
+            opacity: 0.9;
+        }
+        .recipe-card {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .recipe-card a {
+            text-decoration: none;
+            color: inherit;
+        }
+        .recipe-title {
+            font-size: 1rem;
+            margin: 0 0 0.25rem;
+        }
+        .recipe-meta {
+            font-size: 0.8rem;
+            color: #777;
+        }
+        .empty {
+            margin-top: 1.5rem;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <h1>Lost Kitchen Recipes</h1>
+    <div class="subtitle">
+        Recipes pulled from your email. Search by title or keyword.
+    </div>
+
+    <form class="search-bar" method="get">
+        <input 
+            type="text" 
+            name="q" 
+            placeholder="Search (chicken, soup, bread...)" 
+            value="{{ q }}"
+        >
+        <button type="submit">Search</button>
+    </form>
+
+    {% if recipes %}
+        {% for r in recipes %}
+        <div class="recipe-card">
+        <a href="{{ r['url'] }}" target="_blank" rel="noopener">
+            <div class="recipe-title">{{ r['title'] }}</div>
+            <div class="recipe-meta">
+                {{ r['created_at'] }}
+            </div>
+        </a>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty">
+            No recipes found yet. Try running your sync script, or changing your search.
+        </div>
+    {% endif %}
+</body>
+</html>

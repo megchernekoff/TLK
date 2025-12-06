@@ -1,0 +1,17 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# SQLite DB
+db.sqlite3
+
+# Mac cruft
+.DS_Store
+
+# Secrets / OAuth files
+credentials.json
+token.json
+
+# Environment files
+.env
