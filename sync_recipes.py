@@ -1,6 +1,8 @@
 import base64
 import sqlite3
 import requests
+import os 
+import json
 
 from datetime import datetime
 from google.oauth2.credentials import Credentials
@@ -31,10 +33,33 @@ def get_db():
 
 # --------- Gmail helpers ---------
 
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
+
+SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
+
+def get_gmail_creds():
+    """
+    First try local token.json (for your laptop),
+    otherwise use GMAIL_TOKEN_JSON env var (for Render).
+    """
+    # Local dev: use token.json file if present
+    if os.path.exists("token.json"):
+        return Credentials.from_authorized_user_file("token.json", SCOPES)
+
+    # Render: read JSON from env var
+    token_json = os.getenv("GMAIL_TOKEN_JSON")
+    if token_json:
+        info = json.loads(token_json)
+        return Credentials.from_authorized_user_info(info, SCOPES)
+
+    raise RuntimeError("No Gmail credentials found. Provide token.json or GMAIL_TOKEN_JSON.")
+
 def get_gmail_service():
-    creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+    creds = get_gmail_creds()
     service = build("gmail", "v1", credentials=creds)
     return service
+
 
 def find_lost_kitchen_messages(service, max_results=20):
     # Use the exact email address that worked for you before:
