@@ -33,9 +33,6 @@ def get_db():
 
 # --------- Gmail helpers ---------
 
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
-
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 
 def get_gmail_creds():
@@ -44,8 +41,8 @@ def get_gmail_creds():
     otherwise use GMAIL_TOKEN_JSON env var (for Render).
     """
     # Local dev: use token.json file if present
-    if os.path.exists("token.json"):
-        return Credentials.from_authorized_user_file("token.json", SCOPES)
+ #   if os.path.exists("token.json"):
+  #      return Credentials.from_authorized_user_file("token.json", SCOPES)
 
     # Render: read JSON from env var
     token_json = os.getenv("GMAIL_TOKEN_JSON")
@@ -54,6 +51,7 @@ def get_gmail_creds():
         return Credentials.from_authorized_user_info(info, SCOPES)
 
     raise RuntimeError("No Gmail credentials found. Provide token.json or GMAIL_TOKEN_JSON.")
+
 
 def get_gmail_service():
     creds = get_gmail_creds()
