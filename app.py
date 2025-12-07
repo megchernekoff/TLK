@@ -14,9 +14,24 @@ app = Flask(__name__)
 def get_db():
     if "db" not in g:
         conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row  # lets us access columns by name
+        conn.row_factory = sqlite3.Row
+
+        # Ensure the recipes table exists
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS recipes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email_id TEXT,
+                title TEXT,
+                url TEXT,
+                created_at TEXT
+            )
+            """
+        )
+
         g.db = conn
     return g.db
+
 
 @app.teardown_appcontext
 def close_db(error):
