@@ -1,9 +1,13 @@
 import sqlite3
+import os
 from flask import Flask, render_template, request, g, abort
-
+from sync_recipes import sync_recipes
 DB_PATH = "db.sqlite3"
 
 app = Flask(__name__)
+
+
+
 
 # ---------- DB helpers ----------
 
@@ -50,6 +54,26 @@ def index():
     return render_template("index.html", recipes=rows, q=q)
 
 
+@app.route("/internal/test")
+def internal_test():
+    return "test OK\n"
+    
+
+@app.route("/internal/sync")
+def internal_sync():
+    # Simple shared-secret check so randos can't trigger it
+    expected = os.getenv("SYNC_SECRET")
+    provided = request.args.get("secret")
+
+    if not expected or provided != expected:
+        abort(403)
+
+    # Run the sync against the same DB the web app uses
+    sync_recipes()
+
+    return "OK\n"
+
+
 @app.route("/recipe/<int:recipe_id>")
 def recipe_detail(recipe_id):
     db = get_db()
@@ -62,6 +86,7 @@ def recipe_detail(recipe_id):
         abort(404)
 
     return render_template("recipe.html", recipe=row)
+
 
 
 if __name__ == "__main__":

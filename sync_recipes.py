@@ -41,8 +41,8 @@ def get_gmail_creds():
     otherwise use GMAIL_TOKEN_JSON env var (for Render).
     """
     # Local dev: use token.json file if present
- #   if os.path.exists("token.json"):
-  #      return Credentials.from_authorized_user_file("token.json", SCOPES)
+    if os.path.exists("token.json"):
+        return Credentials.from_authorized_user_file("token.json", SCOPES)
 
     # Render: read JSON from env var
     token_json = os.getenv("GMAIL_TOKEN_JSON")
