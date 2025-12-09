@@ -61,7 +61,7 @@ def get_gmail_service():
 
 def find_lost_kitchen_messages(service, max_results=20):
     # Use the exact email address that worked for you before:
-    query = 'from:frontdesk@findthelostkitchen.com'  # <- replace this with your working from: value
+    query = '"The Lost Kitchen"' #'from:frontdesk@findthelostkitchen.com'  # <- replace this with your working from: value
     results = service.users().messages().list(
         userId="me",
         q=query,
