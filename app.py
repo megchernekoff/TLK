@@ -21,6 +21,7 @@ def get_db():
             """
             CREATE TABLE IF NOT EXISTS recipes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source TEXT,
                 email_id TEXT,
                 title TEXT,
                 url TEXT,
@@ -50,7 +51,7 @@ def index():
         like = f"%{q}%"
         rows = db.execute(
             """
-            SELECT id, title, url, created_at
+            SELECT id, source, title, url, created_at
             FROM recipes
             WHERE title LIKE ? OR url LIKE ?
             ORDER BY datetime(created_at) DESC
@@ -60,7 +61,7 @@ def index():
     else:
         rows = db.execute(
             """
-            SELECT id, title, url, created_at
+            SELECT id, source, title, url, created_at
             FROM recipes
             ORDER BY datetime(created_at) DESC
             """
@@ -72,7 +73,7 @@ def index():
 @app.route("/internal/test")
 def internal_test():
     return "test OK\n"
-    
+
 
 @app.route("/internal/sync")
 def internal_sync():

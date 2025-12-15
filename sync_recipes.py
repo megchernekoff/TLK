@@ -22,6 +22,7 @@ def get_db():
         CREATE TABLE IF NOT EXISTS recipes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             email_id TEXT,
+            source TEXT,
             title TEXT,       -- recipe name from the web page
             url TEXT,
             created_at TEXT
@@ -206,7 +207,7 @@ def sync_recipes():
 
     for m in messages:
         email_id = m["id"]
-
+        source = "The Lost Kitchen"
         subject, date_header = get_message_metadata(service, email_id)
         html = get_message_html(service, email_id)
         urls = extract_recipe_links_from_email(html)
@@ -234,10 +235,10 @@ def sync_recipes():
 
             cur.execute(
                 """
-                INSERT INTO recipes (email_id, title, url, created_at)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO recipes (email_id, source, title, url, created_at)
+                VALUES (?, ?, ?, ?, ?)
                 """,
-                (email_id, title, url, created_at),
+                (email_id, source, title, url, created_at),
             )
 
             print(f"✅ Saved: {title} -> {url}")
