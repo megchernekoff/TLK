@@ -4,6 +4,7 @@ import random
 from flask import Flask, render_template, request, g, abort, redirect, url_for, flash
 from sync_recipes import (
     registry, 
+    sync_recipes,
     fetch_recipe_title, 
     extract_title_from_url,
     DB_PATH
