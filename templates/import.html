@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pie Safe • Import Recipe</title>
+  <style>
+    :root{
+      --linen:#fbf6ee;
+      --cream:#fffaf2;
+      --ink:#2b2a28;
+      --muted:#6f6a62;
+      --lav:#7a6aa6;
+      --border:#e7dccb;
+      --card:#ffffffcc;
+    }
+    body{
+      margin:0;
+      font-family: ui-serif, Georgia, "Times New Roman", serif;
+      color:var(--ink);
+      background: var(--linen);
+      min-height:100vh;
+    }
+    .wrap{max-width: 700px; margin: 0 auto; padding: 32px 20px 60px;}
+    .top{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:24px;}
+    h1{margin:0; font-size:36px;}
+    .muted{color:var(--muted); font-size:14px;}
+    a{color:var(--lav); text-decoration:none;}
+    a:hover{text-decoration:underline;}
+    .card{
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:32px;
+      box-shadow:0 12px 24px rgba(0,0,0,0.06);
+    }
+    .form-group{margin-bottom:24px;}
+    label{display:block; margin-bottom:8px; font-weight:600; color:var(--ink);}
+    input[type="text"],
+    input[type="url"]{
+      width:100%;
+      padding:12px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      font-size:16px;
+      font-family:inherit;
+      background:var(--cream);
+    }
+    input:focus{outline:none; border-color:var(--lav);}
+    .help-text{font-size:13px; color:var(--muted); margin-top:6px;}
+    .button-group{display:flex; gap:12px; margin-top:28px;}
+    button[type="submit"]{
+      flex:1;
+      background:var(--lav);
+      color:white;
+      border:none;
+      padding:14px;
+      border-radius:12px;
+      font-size:16px;
+      font-weight:600;
+      cursor:pointer;
+      font-family:inherit;
+    }
+    button[type="submit"]:hover{background:#6a5a96;}
+    .cancel-btn{
+      flex:1;
+      background:white;
+      color:var(--muted);
+      border:1px solid var(--border);
+      padding:14px;
+      border-radius:12px;
+      font-size:16px;
+      font-weight:600;
+      cursor:pointer;
+      text-decoration:none;
+      text-align:center;
+      display:inline-block;
+    }
+    .cancel-btn:hover{border-color:#d6c6b0; color:var(--ink);}
+    .flash-messages{margin-bottom:20px;}
+    .flash{
+      padding:15px;
+      border-radius:12px;
+      margin-bottom:15px;
+    }
+    .flash.success{
+      background:#d4edda;
+      color:#155724;
+      border:1px solid #c3e6cb;
+    }
+    .flash.error{
+      background:#f8d7da;
+      color:#721c24;
+      border:1px solid #f5c6cb;
+    }
+    .info-box{
+      background:#e7f3ff;
+      border-left:4px solid #2196F3;
+      padding:15px;
+      margin-bottom:24px;
+      border-radius:8px;
+    }
+    .info-box h3{margin:0 0 10px; color:#1976D2; font-size:18px;}
+    .info-box ul{margin:8px 0 0 20px;}
+    .info-box li{margin-bottom:5px; color:var(--ink);}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>Import Recipe</h1>
+        <div class="muted">Add a recipe manually from any website</div>
+      </div>
+      <a href="/">← Home</a>
+    </div>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-messages">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    
+    <div class="info-box">
+      <h3>How it works:</h3>
+      <ul>
+        <li>Paste a recipe URL from any website</li>
+        <li>We'll automatically detect the source if it's a known provider</li>
+        <li>Or you can specify a custom source name</li>
+        <li>The recipe title will be extracted from the page</li>
+      </ul>
+    </div>
+    
+    <form method="POST" class="card">
+      <div class="form-group">
+        <label for="url">Recipe URL *</label>
+        <input 
+          type="url" 
+          id="url" 
+          name="url" 
+          placeholder="https://www.example.com/recipe/chocolate-cake"
+          value="{{ url }}"
+          required
+        >
+        <p class="help-text">The full URL to the recipe page</p>
+      </div>
+      
+      <div class="form-group">
+        <label for="custom_source">Custom Source (optional)</label>
+        <input 
+          type="text" 
+          id="custom_source" 
+          name="custom_source" 
+          placeholder="e.g., bon appetit, food network, my blog"
+          value="{{ custom_source }}"
+        >
+        <p class="help-text">
+          Only needed if the source isn't automatically detected. 
+          {% if existing_sources %}
+            Known sources: {{ existing_sources | map('prettify_source') | join(', ') }}
+          {% endif %}
+        </p>
+      </div>
+      
+      <div class="button-group">
+        <button type="submit">Import Recipe</button>
+        <a href="/" class="cancel-btn">Cancel</a>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

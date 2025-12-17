@@ -1,93 +1,172 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>Lost Kitchen Recipes</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body { 
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif; 
-            margin: 1rem; 
-            background: #faf7f3;
-        }
-        h1 { margin-bottom: 0.5rem; }
-        .subtitle { color: #666; margin-bottom: 1rem; }
-        .search-bar {
-            margin-bottom: 1rem;
-        }
-        .search-bar input[type="text"] {
-            width: 70%;
-            padding: 0.5rem;
-            border-radius: 0.5rem;
-            border: 1px solid #ccc;
-        }
-        .search-bar button {
-            padding: 0.5rem 0.75rem;
-            border-radius: 0.5rem;
-            border: none;
-            background: #4b6b4b;
-            color: white;
-            cursor: pointer;
-        }
-        .search-bar button:hover {
-            opacity: 0.9;
-        }
-        .recipe-card {
-            background: white;
-            border-radius: 0.75rem;
-            padding: 0.75rem 1rem;
-            margin-bottom: 0.75rem;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-        }
-        .recipe-card a {
-            text-decoration: none;
-            color: inherit;
-        }
-        .recipe-title {
-            font-size: 1rem;
-            margin: 0 0 0.25rem;
-        }
-        .recipe-meta {
-            font-size: 0.8rem;
-            color: #777;
-        }
-        .empty {
-            margin-top: 1.5rem;
-            color: #777;
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pie Safe</title>
+  <style>
+    :root{
+      --linen:#fbf6ee;
+      --cream:#fffaf2;
+      --ink:#2b2a28;
+      --muted:#6f6a62;
+      --lav:#7a6aa6;
+      --sage:#6a7b67;
+      --card:#ffffffcc;
+      --border:#e7dccb;
+    }
+    body{
+      margin:0;
+      font-family: ui-serif, Georgia, "Times New Roman", serif;
+      color:var(--ink);
+      background:
+        radial-gradient(1200px 700px at 20% 10%, #fff 0%, transparent 55%),
+        radial-gradient(900px 600px at 80% 20%, #fff 0%, transparent 60%),
+        linear-gradient(180deg, var(--linen), #f7eddc);
+      min-height:100vh;
+    }
+    .wrap{max-width: 980px; margin: 0 auto; padding: 48px 20px 60px;}
+    .hero{
+      display:grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 22px;
+      align-items: start;
+      padding-bottom: 4rem;
+    }
+    @media (max-width: 820px){
+      .hero{grid-template-columns:1fr;}
+    }
+    .card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.08);
+      padding: 22px;
+      backdrop-filter: blur(6px);
+    }
+    h1{margin: 0 0 6px; font-size: 44px; letter-spacing: 0.2px;}
+    .tagline{margin:0 0 18px; color:var(--muted); font-size: 18px; line-height:1.4;}
+    .label{display:block; margin: 14px 0 8px; color:var(--muted); font-size: 14px;}
+    select{
+      width:100%;
+      font-size: 16px;
+      padding: 12px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--cream);
+      outline: none;
+    }
+    .btn{
+      display:inline-block;
+      margin-top: 12px;
+      padding: 11px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: var(--ink);
+      text-decoration:none;
+      font-size: 15px;
+    }
+    .btn:hover{border-color:#d6c6b0}
+    .btn-primary{
+      background: var(--lav);
+      color: white;
+      border-color: var(--lav);
+    }
+    .btn-primary:hover{
+      background: #6a5a96;
+      border-color: #6a5a96;
+    }
+    .btn-group{
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .pill{
+      display:inline-block;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: #fff;
+    }
+    .feature-title{margin: 10px 0 6px; font-size: 18px;}
+    .feature-link{color: var(--lav); text-decoration:none;}
+    .feature-link:hover{text-decoration:underline;}
+    .footer{
+      margin-top: 22px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .image{
+      border-radius: 18px;
+      overflow:hidden;
+      border:1px solid var(--border);
+      height: 100%;
+      min-height: 260px;
+      background:
+        linear-gradient(135deg, rgba(122,106,166,0.18), rgba(106,123,103,0.10)),
+        url("https://images.unsplash.com/photo-1504754524776-8f4f37790ca0");
+      background-size: cover;
+      background-position: center;
+    }
+  </style>
 </head>
 <body>
-    <h1>Lost Kitchen Recipes</h1>
-    <div class="subtitle">
-        Recipes pulled from your email. Search by title or keyword.
+  <div class="wrap">
+    <div class="hero">
+      <div class="card">
+        <h1>Pie Safe</h1>
+        <p class="tagline">Your emailed recipes, baked to perfection.</p>
+
+        <span class="pill">Choose a collection</span>
+        <label class="label" for="sourceSelect">Recipe provider</label>
+
+        <select id="sourceSelect">
+          <option value="">Select…</option>
+          {% for s in sources %}
+            <option value="{{ s }}">{{ prettify_source(s) }}</option>
+          {% endfor %}
+        </select>
+
+        <div class="btn-group">
+          <a class="btn btn-primary" id="goBtn" href="#" onclick="goToSource(event)">Open</a>
+          <a class="btn" href="/import">+ Import Recipe</a>
+        </div>
+
+        <div class="footer">
+          Tip: bookmark this page on your phone as an "Add to Home Screen" shortcut later.
+        </div>
+      </div>
+
+      <div class="image card" aria-label="Provence countryside mood image"></div>
     </div>
 
-    <form class="search-bar" method="get">
-        <input 
-            type="text" 
-            name="q" 
-            placeholder="Search (chicken, soup, bread...)" 
-            value="{{ q }}"
-        >
-        <button type="submit">Search</button>
-    </form>
-
-    {% if recipes %}
-        {% for r in recipes %}
-        <div class="recipe-card">
-        <a href="{{ r['url'] }}" target="_blank" rel="noopener">
-            <div class="recipe-title">{{ r['title'] }}</div>
-            <div class="recipe-meta">
-                {{ r['created_at'] }}
-            </div>
-        </a>
+    {% if featured %}{{ prettify_source(source) }}
+      <div class="card" style="margin-top:22px;">
+        <h3>Suggested Recipe</h3>
+        <span class="pill">Featured from {{  prettify_source(featured["source"]) }}</span>
+        <div class="feature-title">
+          <a class="feature-link" href="{{ featured['url'] }}" target="_blank" rel="noopener">
+            {{ featured["title"] }}
+          </a>
         </div>
-        {% endfor %}
-    {% else %}
-        <div class="empty">
-            No recipes found yet. Try running your sync script, or changing your search.
-        </div>
+        <div class="footer">A random pick from your vault — refresh for another.</div>
+      </div>
     {% endif %}
+  </div>
+
+  <script>
+    function goToSource(e){
+      e.preventDefault();
+      const sel = document.getElementById("sourceSelect");
+      const source = sel.value;
+      if(!source) return;
+      // URL-encode so sources like "NYT Cooking" work
+      const path = "/source/" + encodeURIComponent(source);
+      window.location.href = path;
+    }
+  </script>
 </body>
 </html>

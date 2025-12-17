@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pie Safe • {{ source }}</title>
+  <style>
+    body{margin:0; font-family: ui-serif, Georgia, "Times New Roman", serif; background:#fbf6ee; color:#2b2a28;}
+    .wrap{max-width: 980px; margin:0 auto; padding: 32px 20px 60px;}
+    .top{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;}
+    .nav-links{display:flex; gap:12px; align-items:center;}
+    a{color:#7a6aa6; text-decoration:none}
+    a:hover{text-decoration:underline}
+    .card{background:#fff; border:1px solid #e7dccb; border-radius:16px; padding:18px; box-shadow:0 12px 24px rgba(0,0,0,0.06);}
+    .search{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+    input{padding:10px 12px; border-radius:12px; border:1px solid #e7dccb; min-width:240px;}
+    button{padding:10px 12px; border-radius:12px; border:1px solid #e7dccb; background:#fff; cursor:pointer; font-family:inherit;}
+    button:hover{border-color:#d6c6b0;}
+    ul{list-style:none; padding:0; margin:0;}
+    li{padding:10px 0; border-bottom:1px solid #f0e6d7;}
+    .muted{color:#6f6a62; font-size:13px;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+  <h1 style="margin:0;">{{ prettify_source(source) }}</h1>
+        <div class="muted">Your saved recipes from this provider</div>
+      </div>
+      <div class="nav-links">
+        <a href="/import">+ Import</a>
+        <a href="/">← Home</a>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:18px;">
+      <form class="search" method="get">
+        <input name="q" placeholder="Search titles or links…" value="{{ q }}" />
+        <button type="submit">Search</button>
+        {% if q %}
+          <a class="muted" href="/source/{{ source|urlencode }}">Clear</a>
+        {% endif %}
+      </form>
+
+      <div style="margin-top:14px;">
+        {% if recipes|length == 0 %}
+          <div class="muted">No recipes yet for this source.</div>
+        {% else %}
+          <ul>
+            {% for r in recipes %}
+              <li>
+                <a href="{{ r['url'] }}" target="_blank" rel="noopener">{{ r["title"] }}</a>
+                <div class="muted">{{ r["created_at"] }}</div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</body>
+</html>
