@@ -161,7 +161,10 @@
         <p class="help-text">
           Only needed if the source isn't automatically detected. 
           {% if existing_sources %}
-            Known sources: {{ existing_sources | map('prettify_source') | join(', ') }}
+            Known sources: 
+            {% for source in existing_sources %}
+              {{ prettify_source(source) }}{% if not loop.last %}, {% endif %}
+            {% endfor %}
           {% endif %}
         </p>
       </div>
