@@ -5,27 +5,171 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pie Safe • {{ source }}</title>
   <style>
-    body{margin:0; font-family: ui-serif, Georgia, "Times New Roman", serif; background:#fbf6ee; color:#2b2a28;}
-    .wrap{max-width: 980px; margin:0 auto; padding: 32px 20px 60px;}
-    .top{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;}
-    .nav-links{display:flex; gap:12px; align-items:center;}
-    a{color:#7a6aa6; text-decoration:none}
-    a:hover{text-decoration:underline}
-    .card{background:#fff; border:1px solid #e7dccb; border-radius:16px; padding:18px; box-shadow:0 12px 24px rgba(0,0,0,0.06);}
-    .search{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
-    input{padding:10px 12px; border-radius:12px; border:1px solid #e7dccb; min-width:240px;}
-    button{padding:10px 12px; border-radius:12px; border:1px solid #e7dccb; background:#fff; cursor:pointer; font-family:inherit;}
-    button:hover{border-color:#d6c6b0;}
-    ul{list-style:none; padding:0; margin:0;}
-    li{padding:10px 0; border-bottom:1px solid #f0e6d7;}
-    .muted{color:#6f6a62; font-size:13px;}
+    :root{
+      --provence-cream:#fef9f3;
+      --warm-white:#fffbf5;
+      --terracotta:#d4866a;
+      --sage:#8b9d83;
+      --olive:#6b7c59;
+      --butter:#f4e4c1;
+      --clay:#c4a481;
+      --ink:#3d3935;
+      --muted:#6f665c;
+      --card-bg:#fffef9;
+    }
+    
+    body{
+      margin:0; 
+      font-family: 'Courier New', 'Courier', monospace;
+      background: var(--provence-cream);
+      background-image: 
+        repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(139,157,131,0.03) 2px, rgba(139,157,131,0.03) 4px),
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(139,157,131,0.03) 2px, rgba(139,157,131,0.03) 4px);
+      color: var(--ink);
+    }
+    
+    .wrap{
+      max-width: 980px; 
+      margin:0 auto; 
+      padding: 32px 20px 60px;
+    }
+    
+    .top{
+      display:flex; 
+      gap:16px; 
+      align-items:center; 
+      justify-content:space-between; 
+      flex-wrap:wrap;
+      margin-bottom: 24px;
+    }
+    
+    .nav-links{
+      display:flex; 
+      gap:14px; 
+      align-items:center;
+    }
+    
+    a{
+      color: var(--olive); 
+      text-decoration:none;
+      border-bottom: 2px dotted var(--sage);
+      font-weight: bold;
+    }
+    
+    a:hover{
+      color: var(--terracotta);
+      border-bottom-color: var(--terracotta);
+    }
+    
+    .card{
+      background: var(--card-bg); 
+      border: 2px solid var(--clay); 
+      border-radius: 3px; 
+      padding: 28px; 
+      box-shadow: 
+        4px 4px 0 rgba(107,124,89,0.15),
+        8px 8px 0 rgba(107,124,89,0.08);
+      position: relative;
+    }
+    
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      right: 8px;
+      bottom: 8px;
+      border: 1px dashed var(--clay);
+      pointer-events: none;
+      opacity: 0.3;
+    }
+    
+    h1 {
+      margin: 0;
+      font-size: 42px;
+      font-family: 'Georgia', serif;
+      color: var(--olive);
+      text-shadow: 2px 2px 0 rgba(212,134,106,0.2);
+    }
+    
+    .search{
+      display:flex; 
+      gap:12px; 
+      align-items:center; 
+      flex-wrap:wrap;
+    }
+    
+    input{
+      padding: 12px 14px; 
+      border-radius: 2px; 
+      border: 2px solid var(--clay); 
+      min-width: 240px;
+      font-family: 'Georgia', serif;
+      font-size: 15px;
+      background: var(--warm-white);
+      box-shadow: inset 2px 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: var(--olive);
+    }
+    
+    button{
+      padding: 12px 16px; 
+      border-radius: 2px; 
+      border: 2px solid var(--clay); 
+      background: var(--terracotta);
+      color: white;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 13px;
+      box-shadow: 3px 3px 0 rgba(107,124,89,0.2);
+      transition: all 0.2s;
+    }
+    
+    button:hover{
+      background: #c27558;
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0 rgba(107,124,89,0.3);
+    }
+    
+    ul{
+      list-style:none; 
+      padding:0; 
+      margin:0;
+    }
+    
+    li{
+      padding: 16px 0; 
+      border-bottom: 1px dashed var(--clay);
+    }
+    
+    li:last-child {
+      border-bottom: none;
+    }
+    
+    li a {
+      font-size: 17px;
+      font-family: 'Georgia', serif;
+    }
+    
+    .muted{
+      color: var(--muted); 
+      font-size: 13px;
+      font-style: italic;
+      margin-top: 4px;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="top">
       <div>
-  <h1 style="margin:0;">{{ prettify_source(source) }}</h1>
+        <h1 style="margin:0;">{{ prettify_source(source) }}</h1>
         <div class="muted">Your saved recipes from this provider</div>
       </div>
       <div class="nav-links">
