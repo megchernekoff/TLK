@@ -169,7 +169,15 @@
   <div class="wrap">
     <div class="top">
       <div>
-        <h1 style="margin:0;">{{ prettify_source(source) }}</h1>
+        {% if homepage %}
+          <h1 style="margin:0;">
+            <a href="{{ homepage }}" target="_blank" rel="noopener" style="text-decoration:none; border:none; color:var(--olive);">
+              {{ prettify_source(source) }}
+            </a>
+          </h1>
+        {% else %}
+          <h1 style="margin:0;">{{ prettify_source(source) }}</h1>
+        {% endif %}
         <div class="muted">Your saved recipes from this provider</div>
       </div>
       <div class="nav-links">

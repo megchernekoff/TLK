@@ -32,6 +32,8 @@ HEADERS = {
 def get_db():
     """Initialize database connection and create tables if needed."""
     conn = sqlite3.connect(DB_PATH)
+    
+    # Create table if it doesn't exist
     conn.execute("""
         CREATE TABLE IF NOT EXISTS recipes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,14 +43,25 @@ def get_db():
             url TEXT,
             created_at TEXT,
             parent_url TEXT,
+            homepage TEXT,
             UNIQUE(email_id, url)
         )
     """)
+    
+    # Add homepage column if it doesn't exist (for existing databases)
+    try:
+        conn.execute("ALTER TABLE recipes ADD COLUMN homepage TEXT")
+        conn.commit()
+        print("Added homepage column to existing database")
+    except sqlite3.OperationalError:
+        # Column already exists
+        pass
+    
     conn.commit()
     return conn
 
 
-def save_recipe(conn, email_id, source, title, url, parent_url=None):
+def save_recipe(conn, email_id, source, title, url, parent_url=None, homepage=None):
     """Save a recipe to the database."""
     title = html.unescape(title)
     
@@ -57,10 +70,10 @@ def save_recipe(conn, email_id, source, title, url, parent_url=None):
     
     try:
         cursor = conn.execute("""
-            INSERT OR REPLACE INTO recipes
-              (email_id, source, title, url, parent_url, created_at)
-            VALUES (?, ?, ?, ?, ?, datetime('now'))
-        """, (email_id, source, title, url, parent_url))
+            INSERT OR IGNORE INTO recipes
+              (email_id, source, title, url, parent_url, homepage, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+        """, (email_id, source, title, url, parent_url, homepage))
         
         if cursor.rowcount == 0:
             print(f"      DEBUG: Recipe already exists in DB (duplicate)")
@@ -76,15 +89,32 @@ def save_recipe(conn, email_id, source, title, url, parent_url=None):
 
 def get_gmail_creds():
     """Get Gmail credentials from token.json or environment variable."""
+    creds = None
+    
+    # Local dev: use token.json file if present
     if os.path.exists("token.json"):
-        return Credentials.from_authorized_user_file("token.json", SCOPES)
+        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+    else:
+        # Render: read JSON from env var
+        token_json = os.getenv("GMAIL_TOKEN_JSON")
+        if token_json:
+            info = json.loads(token_json)
+            creds = Credentials.from_authorized_user_info(info, SCOPES)
     
-    token_json = os.getenv("GMAIL_TOKEN_JSON")
-    if token_json:
-        info = json.loads(token_json)
-        return Credentials.from_authorized_user_info(info, SCOPES)
+    if not creds:
+        raise RuntimeError("No Gmail credentials found. Provide token.json or GMAIL_TOKEN_JSON.")
     
-    raise RuntimeError("No Gmail credentials found. Provide token.json or GMAIL_TOKEN_JSON.")
+    # Refresh token if expired
+    if creds.expired and creds.refresh_token:
+        from google.auth.transport.requests import Request
+        creds.refresh(Request())
+        
+        # Save refreshed credentials back to token.json if using local file
+        if os.path.exists("token.json"):
+            with open("token.json", "w") as token:
+                token.write(creds.to_json())
+    
+    return creds
 
 
 def get_gmail_service():
@@ -165,6 +195,12 @@ def unwrap_redirect(href: str) -> str:
     except Exception:
         pass
     return href
+
+
+def extract_homepage_from_url(url: str) -> str:
+    """Extract the homepage URL from any recipe URL."""
+    parsed = urlparse(url)
+    return f"{parsed.scheme}://{parsed.netloc}"
 
 
 def fetch_page_html(url: str) -> Optional[str]:
@@ -555,6 +591,9 @@ def sync_recipes():
             if not title:
                 title = subject
             
+            # Extract homepage from recipe URL
+            homepage = extract_homepage_from_url(recipe_url)
+            
             print(f"   ✓ {title}")
             
             save_recipe(
@@ -563,7 +602,8 @@ def sync_recipes():
                 source=provider_name,
                 title=title,
                 url=recipe_url,
-                parent_url=parent_url if parent_url != recipe_url else None
+                parent_url=parent_url if parent_url != recipe_url else None,
+                homepage=homepage
             )
     
     conn.close()

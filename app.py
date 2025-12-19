@@ -4,9 +4,10 @@ import random
 from flask import Flask, render_template, request, g, abort, redirect, url_for, flash
 from sync_recipes import (
     registry, 
-    sync_recipes,
     fetch_recipe_title, 
     extract_title_from_url,
+    extract_homepage_from_url,
+    sync_recipes,
     DB_PATH
 )
 
@@ -43,6 +44,7 @@ def get_db():
                 parent_url TEXT,
                 section_anchor TEXT,
                 provider_page_title TEXT,
+                homepage TEXT,
                 UNIQUE(email_id, url)
             )
             """
@@ -82,6 +84,13 @@ def source_page(source):
     q = request.args.get("q", "").strip()
     db = get_db()
     
+    # Get the homepage for this source (from any recipe)
+    homepage_row = db.execute(
+        "SELECT homepage FROM recipes WHERE source = ? AND homepage IS NOT NULL LIMIT 1",
+        (source,)
+    ).fetchone()
+    homepage = homepage_row["homepage"] if homepage_row else None
+    
     if q:
         rows = db.execute(
             """
@@ -104,7 +113,7 @@ def source_page(source):
             (source,),
         ).fetchall()
     
-    return render_template("source.html", source=source, recipes=rows, q=q)
+    return render_template("source.html", source=source, recipes=rows, q=q, homepage=homepage)
 
 @app.route("/recipe/<int:recipe_id>")
 def recipe_detail(recipe_id):
@@ -164,14 +173,17 @@ def import_recipe():
         if not title:
             title = "Imported Recipe"
         
+        # Extract homepage from URL
+        homepage = extract_homepage_from_url(url)
+        
         # Save to database
         try:
             db.execute(
                 """
-                INSERT INTO recipes (email_id, source, title, url, created_at)
-                VALUES (?, ?, ?, ?, datetime('now'))
+                INSERT INTO recipes (email_id, source, title, url, homepage, created_at)
+                VALUES (?, ?, ?, ?, ?, datetime('now'))
                 """,
-                ("manual_import", source, title, url)
+                ("manual_import", source, title, url, homepage)
             )
             db.commit()
             flash(f"Successfully imported: {title}", "success")
@@ -193,8 +205,6 @@ def internal_test():
 
 @app.route("/internal/sync")
 def internal_sync():
-    from sync_recipes import sync_recipes
-    
     # Simple shared-secret check so randos can't trigger it
     expected = os.getenv("SYNC_SECRET")
     provided = request.args.get("secret")
