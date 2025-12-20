@@ -18,7 +18,7 @@ from googleapiclient.discovery import build
 # ============================================================================
 
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
-DB_PATH = "db.sqlite3"
+DB_PATH = os.getenv("DB_PATH", "db.sqlite3")
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                   "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -52,7 +52,6 @@ def get_db():
     try:
         conn.execute("ALTER TABLE recipes ADD COLUMN homepage TEXT")
         conn.commit()
-        print("Added homepage column to existing database")
     except sqlite3.OperationalError:
         # Column already exists
         pass
@@ -65,9 +64,6 @@ def save_recipe(conn, email_id, source, title, url, parent_url=None, homepage=No
     """Save a recipe to the database."""
     title = html.unescape(title)
     
-    # Debug: Show what we're about to save
-    print(f"      DEBUG: Saving - Title: '{title}' | URL: {url[:60]}")
-    
     try:
         cursor = conn.execute("""
             INSERT OR IGNORE INTO recipes
@@ -75,12 +71,9 @@ def save_recipe(conn, email_id, source, title, url, parent_url=None, homepage=No
             VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
         """, (email_id, source, title, url, parent_url, homepage))
         
-        if cursor.rowcount == 0:
-            print(f"      DEBUG: Recipe already exists in DB (duplicate)")
-        
         conn.commit()
     except Exception as e:
-        print(f"      ERROR saving recipe: {e}")
+        print(f"⚠️  Error saving recipe: {e}")
 
 
 # ============================================================================
@@ -125,7 +118,7 @@ def get_gmail_service():
 
 def find_recipe_messages(service, max_results=50):
     """Find recipe emails using Gmail search."""
-    query = '(skinnytaste OR "The Lost Kitchen")'
+    query = '(skinnytaste OR "The Lost Kitchen" OR "Real Food Whole Life" OR realfoodwholelife)'
     results = service.users().messages().list(
         userId="me",
         q=query,
@@ -197,12 +190,6 @@ def unwrap_redirect(href: str) -> str:
     return href
 
 
-def extract_homepage_from_url(url: str) -> str:
-    """Extract the homepage URL from any recipe URL."""
-    parsed = urlparse(url)
-    return f"{parsed.scheme}://{parsed.netloc}"
-
-
 def fetch_page_html(url: str) -> Optional[str]:
     """Fetch HTML content from a URL."""
     try:
@@ -245,10 +232,7 @@ def fetch_recipe_title(url: str) -> Optional[str]:
 
 
 def extract_title_from_url(url: str) -> str:
-    """
-    Extract a readable title from the URL path as a fallback.
-    Example: /chicken-tacos-recipe/ -> Chicken Tacos Recipe
-    """
+    """Extract a readable title from the URL path as a fallback."""
     parsed = urlparse(url)
     path = parsed.path.strip('/')
     
@@ -264,6 +248,12 @@ def extract_title_from_url(url: str) -> str:
     title = ' '.join(word.capitalize() for word in title.split())
     
     return title
+
+
+def extract_homepage_from_url(url: str) -> str:
+    """Extract the homepage URL from any recipe URL."""
+    parsed = urlparse(url)
+    return f"{parsed.scheme}://{parsed.netloc}"
 
 
 # ============================================================================
@@ -292,21 +282,12 @@ class RecipeProvider(ABC):
     
     @abstractmethod
     def extract_links_from_email(self, email_html: str) -> List[str]:
-        """
-        Extract recipe-related URLs from email HTML.
-        Returns list of URLs that might be landing pages or direct recipe links.
-        """
+        """Extract recipe-related URLs from email HTML."""
         pass
     
     @abstractmethod
     def resolve_to_recipe_pages(self, url: str) -> List[Tuple[str, str]]:
-        """
-        Given a URL from the email, resolve it to actual recipe page(s).
-        Returns list of (parent_url, recipe_url) tuples.
-        
-        - If URL is a landing page with multiple recipes, return multiple tuples
-        - If URL is already a recipe page, return [(url, url)]
-        """
+        """Resolve URL to actual recipe page(s). Returns list of (parent_url, recipe_url) tuples."""
         pass
 
 
@@ -322,10 +303,7 @@ class SkinnytasteProvider(RecipeProvider):
         return ["skinnytaste.us", "skinnytaste.com"]
     
     def extract_links_from_email(self, email_html: str) -> List[str]:
-        """
-        Skinnytaste emails contain 'GET THE RECIPE' buttons that link through MailChimp tracking.
-        We need to follow the redirect to get the clean recipe URL.
-        """
+        """Skinnytaste emails contain 'GET THE RECIPE' buttons through MailChimp tracking."""
         soup = BeautifulSoup(email_html, "html.parser")
         links = []
         
@@ -333,29 +311,19 @@ class SkinnytasteProvider(RecipeProvider):
             text = a.get_text(" ", strip=True).lower()
             href = unwrap_redirect(a["href"])
             
-            # Verify it's a Skinnytaste URL (including MailChimp tracking domain)
             if not self.matches_domain(href):
                 continue
             
-            # Skip preferences/account links
             parsed = urlparse(href)
             path = (parsed.path or "").lower()
             if "preferences" in path or "unsubscribe" in path or "account" in path:
                 continue
             
-            # Look for "GET THE RECIPE" or similar text
-            if any(pattern in text for pattern in [
-                "get the recipe",
-                "get recipe",
-                "view recipe",
-                "read more"
-            ]):
-                # Follow the redirect to get the clean URL
+            if any(pattern in text for pattern in ["get the recipe", "get recipe", "view recipe", "read more"]):
                 clean_url = self._follow_redirect(href)
                 if clean_url:
                     links.append(clean_url)
         
-        # Deduplicate while preserving order
         seen = set()
         unique_links = []
         for link in links:
@@ -366,33 +334,18 @@ class SkinnytasteProvider(RecipeProvider):
         return unique_links
     
     def _follow_redirect(self, url: str) -> Optional[str]:
-        """
-        Follow MailChimp tracking URL to get the clean final URL.
-        Also removes tracking query parameters.
-        """
+        """Follow MailChimp tracking URL to get the clean final URL."""
         try:
-            # Follow redirects but don't actually fetch the page content
             resp = requests.head(url, headers=HEADERS, allow_redirects=True, timeout=10)
             final_url = resp.url
-            
-            # Remove tracking parameters
             parsed = urlparse(final_url)
-            # Keep only the base URL without query params or fragments
             clean_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
-            
-            # Remove trailing slash for consistency
-            clean_url = clean_url.rstrip('/')
-            
-            return clean_url
-        except Exception as e:
-            print(f"   ⚠️  Could not follow redirect for {url[:80]}: {e}")
+            return clean_url.rstrip('/')
+        except Exception:
             return None
     
     def resolve_to_recipe_pages(self, url: str) -> List[Tuple[str, str]]:
-        """
-        Skinnytaste emails typically link directly to recipe pages.
-        Just return the URL as-is.
-        """
+        """Skinnytaste emails typically link directly to recipe pages."""
         return [(url, url)]
 
 
@@ -408,9 +361,7 @@ class TheLostKitchenProvider(RecipeProvider):
         return ["thelostkitchen", "findthelostkitchen"]
     
     def extract_links_from_email(self, email_html: str) -> List[str]:
-        """
-        The Lost Kitchen emails contain links to landing pages or recipe pages.
-        """
+        """The Lost Kitchen emails contain links to landing pages or recipe pages."""
         soup = BeautifulSoup(email_html, "html.parser")
         links = []
         
@@ -424,15 +375,12 @@ class TheLostKitchenProvider(RecipeProvider):
             path = (parsed.path or "").lower()
             text = a.get_text(" ", strip=True).lower()
             
-            # Skip unsubscribe/account links
             if "unsubscribe" in path or "account" in path:
                 continue
             
-            # Include recipe-related links
             if "recipe" in path or "recipes" in path or "recipe" in text or "very+good" in path:
                 links.append(href)
         
-        # Deduplicate
         seen = set()
         unique_links = []
         for link in links:
@@ -443,13 +391,9 @@ class TheLostKitchenProvider(RecipeProvider):
         return unique_links
     
     def resolve_to_recipe_pages(self, url: str) -> List[Tuple[str, str]]:
-        """
-        The Lost Kitchen URLs might be landing pages with multiple recipes.
-        Check if page contains multiple 'Get the Recipe' links.
-        """
+        """The Lost Kitchen URLs might be landing pages with multiple recipes."""
         html = fetch_page_html(url)
         if not html:
-            # If we can't fetch it, assume it's a direct recipe link
             return [(url, url)]
         
         soup = BeautifulSoup(html, "html.parser")
@@ -458,16 +402,13 @@ class TheLostKitchenProvider(RecipeProvider):
         for a in soup.find_all("a", href=True):
             text = a.get_text(" ", strip=True).lower()
             
-            # Skip footer links
             if "everyday shop" in text:
                 continue
             
-            # Look for "Get the Recipe" buttons
             if "get" in text and "recipe" in text:
                 href = urljoin(url, a["href"])
                 recipe_links.append(href)
         
-        # Deduplicate
         seen = set()
         unique_recipe_links = []
         for link in recipe_links:
@@ -475,12 +416,66 @@ class TheLostKitchenProvider(RecipeProvider):
                 seen.add(link)
                 unique_recipe_links.append(link)
         
-        # If we found multiple recipe links, it's a landing page
         if len(unique_recipe_links) >= 2:
             return [(url, recipe_url) for recipe_url in unique_recipe_links]
         else:
-            # Single recipe or couldn't find any - treat URL as recipe page
             return [(url, url)]
+
+
+class RealFoodWholeLifeProvider(RecipeProvider):
+    """Provider for Real Food Whole Life recipes."""
+    
+    @property
+    def name(self) -> str:
+        return "real_food_whole_life"
+    
+    @property
+    def domains(self) -> List[str]:
+        return ["realfoodwholelife.com", "convertkit"]
+    
+    def extract_links_from_email(self, email_html: str) -> List[str]:
+        """Real Food Whole Life emails have base64-encoded URLs in ConvertKit tracking links."""
+        soup = BeautifulSoup(email_html, "html.parser")
+        links = []
+        
+        for a in soup.find_all("a", href=True):
+            href = a["href"]
+            
+            # Look for ConvertKit click tracking links
+            if "click.convertkit" in href:
+                try:
+                    # ConvertKit URLs have base64-encoded destination at the end
+                    # Format: https://...convertkit.com/LONG_ID/SHORT_ID/BASE64_URL
+                    parts = href.split('/')
+                    if len(parts) >= 6:
+                        # Last part is base64-encoded URL
+                        encoded_url = parts[-1]
+                        # Decode from base64
+                        decoded_bytes = base64.urlsafe_b64decode(encoded_url + '==')
+                        decoded_url = decoded_bytes.decode('utf-8')
+                        
+                        # Check if it's a recipe URL
+                        if "realfoodwholelife.com" in decoded_url and "/recipes/" in decoded_url:
+                            parsed = urlparse(decoded_url)
+                            clean_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+                            clean_url = clean_url.rstrip('/')
+                            links.append(clean_url)
+                        
+                except Exception:
+                    pass
+        
+        seen = set()
+        unique_links = []
+        for link in links:
+            if link not in seen:
+                seen.add(link)
+                unique_links.append(link)
+        
+        return unique_links
+    
+    def resolve_to_recipe_pages(self, url: str) -> List[Tuple[str, str]]:
+        """Real Food Whole Life emails link directly to recipe pages."""
+        return [(url, url)]
 
 
 # ============================================================================
@@ -505,17 +500,12 @@ class ProviderRegistry:
         return None
     
     def extract_all_recipes_from_email(self, email_html: str) -> List[Tuple[str, str, str]]:
-        """
-        Extract all recipe links from an email using all registered providers.
-        Returns list of (provider_name, parent_url, recipe_url) tuples.
-        """
+        """Extract all recipe links from an email using all registered providers."""
         results = []
         
         for provider in self.providers:
-            # Get candidate URLs from email
             email_links = provider.extract_links_from_email(email_html)
             
-            # Resolve each URL to actual recipe page(s)
             for email_link in email_links:
                 resolved = provider.resolve_to_recipe_pages(email_link)
                 for parent_url, recipe_url in resolved:
@@ -536,6 +526,7 @@ class ProviderRegistry:
 registry = ProviderRegistry()
 registry.register(SkinnytasteProvider())
 registry.register(TheLostKitchenProvider())
+registry.register(RealFoodWholeLifeProvider())
 
 
 # ============================================================================
@@ -562,7 +553,6 @@ def sync_recipes():
         
         email_html = get_message_html(service, email_id)
         
-        # Extract all recipes from this email
         recipes = registry.extract_all_recipes_from_email(email_html)
         
         if not recipes:
@@ -572,26 +562,20 @@ def sync_recipes():
         print(f"   Found {len(recipes)} recipe(s)")
         
         for provider_name, parent_url, recipe_url in recipes:
-            # For multi-recipe emails, prefer URL-based titles to avoid duplicates
             if len(recipes) > 1:
-                # Try to fetch from page first
                 title = fetch_recipe_title(recipe_url)
-                # If blocked, extract from URL (better than duplicate email subject)
                 if not title:
                     title = extract_title_from_url(recipe_url)
             else:
-                # For single recipe emails, try these in order
                 title = fetch_recipe_title(recipe_url)
                 if not title:
                     title = extract_title_from_url(recipe_url)
                 if not title:
                     title = subject
             
-            # Final fallback
             if not title:
                 title = subject
             
-            # Extract homepage from recipe URL
             homepage = extract_homepage_from_url(recipe_url)
             
             print(f"   ✓ {title}")
